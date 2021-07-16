@@ -24,6 +24,7 @@ dependencies {
 
     // Dependencies
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:$kotlinCoroutinesVersion")    // Coroutines
+    implementation("com.jcraft:jsch:0.1.55") // Jsch
 
     // Compose UI
     implementation(compose.desktop.currentOs)

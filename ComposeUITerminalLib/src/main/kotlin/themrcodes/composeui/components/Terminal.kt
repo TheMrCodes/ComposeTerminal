@@ -69,7 +69,6 @@ fun Terminal(
 
     Box(
         modifier = Modifier
-            .fillMaxSize()
             .background(Color.Black)
             .padding(10.dp),
         contentAlignment = Alignment.TopStart,
