@@ -2,6 +2,7 @@ package core
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material.Button
 import androidx.compose.material.Text
 import androidx.compose.material.TextField
@@ -10,14 +11,15 @@ import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.key.*
+import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.jcraft.jsch.*
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.ExperimentalCoroutinesApi
-import kotlinx.coroutines.runInterruptible
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import themrcodes.composeui.components.ComposeTerm
+import themrcodes.composeui.components.ComposeTerminal
 import themrcodes.composeui.components.Terminal
 import themrcodes.composeui.term.Connection
 import themrcodes.composeui.term.Term
@@ -29,16 +31,9 @@ import java.io.OutputStream
 @ExperimentalCoroutinesApi
 @ExperimentalComposeUiApi
 fun main() = application {
-    val builder = ProcessBuilder(listOf("cmd"))
-    builder.redirectErrorStream(true)
-    builder.directory(File("."))
-    val p = builder.start()
-
-
-
     val session = JSch().run {
-        val s = getSession("", "", 22)
-        s.setPassword("".toByteArray())
+        val s = getSession("pi", "192.168.0.14", 22) //TODO remove data
+        s.setPassword("hCmqnr7RoaQbv13o9qOz".toByteArray())
         s.userInfo = object: UserInfo {
             override fun getPassphrase(): String { return "" }
             override fun getPassword(): String { return "" }
@@ -53,71 +48,76 @@ fun main() = application {
 
     println("Recompose")
     val channel = session.openChannel("shell") as ChannelShell
-    val cin = channel.inputStream
-    val cout = channel.outputStream
-    channel.connect()
     // channel.setPtySize() sets grid size and display size
-    val con = object: Connection {
-        override val inputStream = cin
-        override val outputStream = cout
-        override fun close() {
-            inputStream.close()
-            outputStream.close()
-        }
-        override fun requestResize(term: Term) {
-            channel.setPtySize(term.columnCount, term.rowCount, term.termWidth, term.termHeight)
-        }
-    }
+//    val con = object: Connection {
+//        override val inputStream = cin
+//        override val outputStream = cout
+//        override fun close() {
+//            inputStream.close()
+//            outputStream.close()
+//        }
+//        override fun requestResize(term: Term) {
+//            channel.setPtySize(term.columnCount, term.rowCount, term.termWidth, term.termHeight)
+//        }
+//    }
 
     Window(onCloseRequest = {
         session.disconnect()
         channel.disconnect()
     }) {
-        Column {
-            val term = remember { ComposeTerm() }
-            LaunchedEffect(Unit) {
-                runInterruptible(Dispatchers.IO) {
-                    term.start(con)
+        var scaling by remember { mutableStateOf(1f) }
+        CompositionLocalProvider(LocalDensity provides Density(scaling, 1.25f)) {
+            remember {
+                window.rootPane.addMouseWheelListener {
+                    if (it.isControlDown) {
+                        val delta = (0.1f * it.preciseWheelRotation.toFloat() * it.scrollAmount.toFloat() * -1f)
+                        if (!delta.isNaN() && ((0.1f < scaling && scaling < 5f) || (0.1f < scaling && delta < 0) || (scaling < 5f && delta > 0)))
+                            scaling += delta
+                    }
                 }
             }
-            term.render(con)
-            Terminal(cin, cout)
-/*
-//            Button(
-//                modifier = Modifier.background(Color.White),
-//                onClick = {
-//                    println("Show date...")
-//                    channel.outputStream.write("date".toByteArray())
-//                    channel.outputStream.flush()
-//                }
-//            ) {
-//                Text("Button")
-//            }
-//            var textState by remember { mutableStateOf("") }
-//            TextField(
-//                value = textState,
-//                onValueChange = { textState = it },
-//                Modifier.onKeyEvent {
-//                    if (it.type != KeyEventType.KeyUp) return@onKeyEvent false
-//                    when(it.key) {
-//                        Key.Enter -> {
-//                            if (it.isCtrlPressed) {
-//                                println("Launch command...")
-//                                val command = textState
-////                                channel.outputStream.write(command.toByteArray())
-////                                channel.outputStream.flush()
-////                                channel.connect()
-//                                textState = ""
-//                                false
-//                            } else {
-//                                false
-//                            }
-//                        }
-//                        else -> false
-//                    }
-//                }
-//            )
-*/
+
+            Column(Modifier.fillMaxSize()) {
+                ComposeTerminal(channel)
+
+                //Terminal(cin, cout)
+    /*
+    //            Button(
+    //                modifier = Modifier.background(Color.White),
+    //                onClick = {
+    //                    println("Show date...")
+    //                    channel.outputStream.write("date".toByteArray())
+    //                    channel.outputStream.flush()
+    //                }
+    //            ) {
+    //                Text("Button")
+    //            }
+    //            var textState by remember { mutableStateOf("") }
+    //            TextField(
+    //                value = textState,
+    //                onValueChange = { textState = it },
+    //                Modifier.onKeyEvent {
+    //                    if (it.type != KeyEventType.KeyUp) return@onKeyEvent false
+    //                    when(it.key) {
+    //                        Key.Enter -> {
+    //                            if (it.isCtrlPressed) {
+    //                                println("Launch command...")
+    //                                val command = textState
+    ////                                channel.outputStream.write(command.toByteArray())
+    ////                                channel.outputStream.flush()
+    ////                                channel.connect()
+    //                                textState = ""
+    //                                false
+    //                            } else {
+    //                                false
+    //                            }
+    //                        }
+    //                        else -> false
+    //                    }
+    //                }
+    //            )
+    */
+            }
         }
     }
 

@@ -1,18 +1,25 @@
 package themrcodes.composeui.components
 
-import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.ScrollState
+import androidx.compose.foundation.background
+import androidx.compose.foundation.gestures.Orientation
+import androidx.compose.foundation.gestures.scrollable
+import androidx.compose.foundation.layout.BoxWithConstraints
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.material.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.unit.dp
 import themrcodes.composeui.term.Connection
 import themrcodes.composeui.term.EmulatorVT100
 import themrcodes.composeui.term.Term
-import java.time.LocalDateTime
 
 
 class ComposeTerm: Term {
@@ -23,7 +30,7 @@ class ComposeTerm: Term {
     var fcolor by mutableStateOf(Color.White)
     var bcolor by mutableStateOf(Color.Black)
     var updateState by mutableStateOf(1)
-    var text by mutableStateOf("")
+    var lines = mutableStateListOf<String>()
 
 
     lateinit var connection: Connection
@@ -35,7 +42,12 @@ class ComposeTerm: Term {
 
     @Composable
     fun render(connection: Connection) {
-        Text(text, modifier = Modifier.fillMaxWidth(), softWrap = true)
+        val scrollState = rememberScrollState()
+        LazyColumn(modifier = Modifier.height(400.dp).fillMaxWidth().scrollable(scrollState, Orientation.Vertical)) {
+            items(lines) {
+                Text(it, modifier = Modifier.fillParentMaxWidth().background(Color.Red))
+            }
+        }
     }
 
     override fun getColumnCount(): Int = 80
@@ -75,12 +87,17 @@ class ComposeTerm: Term {
 
     override fun drawBytes(buf: ByteArray, s: Int, len: Int, x: Int, y: Int) {
         println("drawBytes")
-        text += String(buf, s, len)
+        if (lines.size < y) {
+            while (lines.size <= y) {
+                lines.add("")
+            }
+        }
+        lines[y] = String(buf, s, len)
         updateState += 1
     }
     override fun drawString(str: String, x: Int, y: Int) {
         println("drawString")
-        text += str
+        lines.addAll(str.split("\n"))
         updateState += 1
     }
     override fun beep() {

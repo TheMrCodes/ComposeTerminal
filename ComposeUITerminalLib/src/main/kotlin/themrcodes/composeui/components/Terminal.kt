@@ -95,7 +95,7 @@ fun Terminal(
                                 Key.Enter -> {
                                     scope.launch {
                                         runInterruptible(Dispatchers.IO) {
-                                            outputStream.write(value.toByteArray())
+                                            outputStream.write((value + "\n").toByteArray())
                                             outputStream.flush()
                                         }
                                         value = ""
