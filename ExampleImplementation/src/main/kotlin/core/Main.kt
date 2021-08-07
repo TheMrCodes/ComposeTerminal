@@ -1,31 +1,20 @@
 package core
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material.Button
-import androidx.compose.material.Text
-import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.input.key.*
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
-import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
-import com.jcraft.jsch.*
-import kotlinx.coroutines.*
-import themrcodes.composeui.components.ComposeTerm
+import com.jcraft.jsch.ChannelShell
+import com.jcraft.jsch.JSch
+import com.jcraft.jsch.UserInfo
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import themrcodes.composeui.components.ComposeTerminal
-import themrcodes.composeui.components.Terminal
-import themrcodes.composeui.term.Connection
-import themrcodes.composeui.term.Term
-import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
+
 
 
 @ExperimentalCoroutinesApi
@@ -48,18 +37,6 @@ fun main() = application {
 
     println("Recompose")
     val channel = session.openChannel("shell") as ChannelShell
-    // channel.setPtySize() sets grid size and display size
-//    val con = object: Connection {
-//        override val inputStream = cin
-//        override val outputStream = cout
-//        override fun close() {
-//            inputStream.close()
-//            outputStream.close()
-//        }
-//        override fun requestResize(term: Term) {
-//            channel.setPtySize(term.columnCount, term.rowCount, term.termWidth, term.termHeight)
-//        }
-//    }
 
     Window(onCloseRequest = {
         session.disconnect()
@@ -79,44 +56,6 @@ fun main() = application {
 
             Column(Modifier.fillMaxSize()) {
                 ComposeTerminal(channel)
-
-                //Terminal(cin, cout)
-    /*
-    //            Button(
-    //                modifier = Modifier.background(Color.White),
-    //                onClick = {
-    //                    println("Show date...")
-    //                    channel.outputStream.write("date".toByteArray())
-    //                    channel.outputStream.flush()
-    //                }
-    //            ) {
-    //                Text("Button")
-    //            }
-    //            var textState by remember { mutableStateOf("") }
-    //            TextField(
-    //                value = textState,
-    //                onValueChange = { textState = it },
-    //                Modifier.onKeyEvent {
-    //                    if (it.type != KeyEventType.KeyUp) return@onKeyEvent false
-    //                    when(it.key) {
-    //                        Key.Enter -> {
-    //                            if (it.isCtrlPressed) {
-    //                                println("Launch command...")
-    //                                val command = textState
-    ////                                channel.outputStream.write(command.toByteArray())
-    ////                                channel.outputStream.flush()
-    ////                                channel.connect()
-    //                                textState = ""
-    //                                false
-    //                            } else {
-    //                                false
-    //                            }
-    //                        }
-    //                        else -> false
-    //                    }
-    //                }
-    //            )
-    */
             }
         }
     }

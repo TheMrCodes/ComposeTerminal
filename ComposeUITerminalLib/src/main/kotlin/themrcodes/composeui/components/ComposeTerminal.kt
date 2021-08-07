@@ -23,8 +23,73 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 
 
+data class ComposeTerminalStyle(
+    val backgroundColor: Color = Color.White,
+    val fontColor: Color = Color.Black,
+)
+
+fun updateStyle(tag: String, lastStyle: SpanStyle, terminalStyle: ComposeTerminalStyle): SpanStyle {
+    /*
+    // \u001b[0m
+    // \u001b[1m
+    // \u001b[2m
+    // \u001b[3m
+    // \u001b[4m
+    // \u001b[5m
+    // \u001b[6m
+    // \u001b[7m
+    // \u001b[8m
+    // \u001b[0;30m
+    // \u001b[0;30;40m
+    // \u001b[1;34;42m
+
+    // Reset = '\u001b[0m'
+
+    // Colors:
+    //   Foreground       = 38 to 256 Colors
+    //   Background Color = 40-256
+
+    // Font Style
+    //   Bold       = \u001b[1m
+    //   Underline  = \u001b[4m
+    //   Reversed   = \u001b[7m
+
+    // Cursor navigation:
+    //   Up     = \u001b[{n}A
+    //   Down   = \u001b[{n}B
+    //   Right  = \u001b[{n}C
+    //   Left   = \u001b[{n}D
+
+    // Next Line    = \u001b[{n}E moves cursor to beginning of line n lines down
+    // Prev Line    = \u001b[{n}F moves cursor to beginning of line n lines down
+
+    // Set Column   = \u001b[{n}G moves cursor to column n
+    // Set Position = \u001b[{n};{m}H moves cursor to row n column m
+
+    // Clear Screen = \u001b[{n}J clears the screen
+    //   n=0 clears from cursor until end of screen,
+    //   n=1 clears from cursor to beginning of screen
+    //   n=2 clears entire screen
+
+    // Clear Line: \u001b[{n}K clears the current line
+    //   n=0 clears from cursor to end of line
+    //   n=1 clears from cursor to start of line
+    //   n=2 clears entire line
+
+    // Save Position: \u001b[{s} saves the current cursor position
+    // Save Position: \u001b[{u} restores the cursor to the last saved positio
+    */
+    println("'$tag'")
+    return lastStyle
+}
+
+
 @Composable
-fun ComposeTerminal(channel: ChannelShell, modifier: Modifier = Modifier) {
+fun ComposeTerminal(
+    channel: ChannelShell,
+    modifier: Modifier = Modifier,
+    theme: ComposeTerminalStyle = ComposeTerminalStyle(),
+) {
     val lines = remember { mutableStateListOf<String>() }
 
     LaunchedEffect(Unit) {
@@ -51,7 +116,6 @@ fun ComposeTerminal(channel: ChannelShell, modifier: Modifier = Modifier) {
                         lines.add(line.last())
                 }
 
-
                 if (n == 0) delay(10)
             }
         }
@@ -67,74 +131,27 @@ fun ComposeTerminal(channel: ChannelShell, modifier: Modifier = Modifier) {
 
     BoxWithConstraints(
         modifier = Modifier
-            .onSizeChanged {  }
+            .onSizeChanged { }
             .then(modifier)
     ) {
         val scrollStateX = rememberScrollState()
 
         SelectionContainer {
-            val defaultColor = remember { Color.Black }
-            var lastColor = remember { defaultColor }
-            val colors = remember { mapOf(
-                0 to defaultColor,
-                30 to Color.Black,
-                31 to Color.Red,
-                32 to Color.Green,
-                33 to Color.Yellow,
-                34 to Color.Blue,
-                35 to Color.Magenta,
-                36 to Color.Cyan,
-                37 to Color.White,
-                //38 to 256 Colors
-
-                //TODO 40-47 Colors Background
-                //TODO 48 to 256 Colors Background
-                // Bold: \u001b[1m
-                // Underline: \u001b[4m
-                // Reversed: \u001b[7m
-
-                /*TODO Cursor navigation
-                    Up: \u001b[{n}A
-                    Down: \u001b[{n}B
-                    Right: \u001b[{n}C
-                    Left: \u001b[{n}D
-
-                    Next Line: \u001b[{n}E moves cursor to beginning of line n lines down
-                    Prev Line: \u001b[{n}F moves cursor to beginning of line n lines down
-
-                    Set Column: \u001b[{n}G moves cursor to column n
-                    Set Position: \u001b[{n};{m}H moves cursor to row n column m
-
-                    Clear Screen: \u001b[{n}J clears the screen
-                        n=0 clears from cursor until end of screen,
-                        n=1 clears from cursor to beginning of screen
-                        n=2 clears entire screen
-                    Clear Line: \u001b[{n}K clears the current line
-                        n=0 clears from cursor to end of line
-                        n=1 clears from cursor to start of line
-                        n=2 clears entire line
-
-                    Save Position: \u001b[{s} saves the current cursor position
-                    Save Position: \u001b[{u} restores the cursor to the last saved position
-                */
-            ) }
-            val regex = remember { "(\u001b\\[0m)|(\u001b\\[[014]{0,3};?[0-9][0-9]m)".toRegex() }
+            var lastStyle = remember { SpanStyle(color = theme.fontColor, background = theme.backgroundColor) }
+            val regex = remember { Regex("\\u001b\\[[0-8]{0,8};?(3[0-9])?;?(4[0-9])?[mA-K]") }
             LazyColumn(Modifier.horizontalScroll(scrollStateX)) {
                 items(lines) { line ->
                     Text(buildAnnotatedString {
-                        pushStyle(SpanStyle(color = lastColor))
+                        pushStyle(lastStyle)
                         val parts = regex.split(line).toList()
                         val found = regex.findAll(line).toList()
                         for (i in parts.indices) {
                             append(parts[i])
                             found.getOrNull(i)?.let {
-                                val num = it.value.split("\\[([0-9]{2};)?".toRegex())
-                                    .last().removeSuffix("m").toInt()
-                                lastColor = colors[num] ?: error("Color $num not found!")
-                                //TODO Background / foreground colors
                                 //TODO clear screen
                                 //TODO colors not found if \r
-                                pushStyle(SpanStyle(color = lastColor))
+                                lastStyle = updateStyle(it.value, lastStyle, theme)
+                                pushStyle(lastStyle)
                             }
                         }
                     }, fontFamily = FontFamily.Monospace, maxLines = 1)
