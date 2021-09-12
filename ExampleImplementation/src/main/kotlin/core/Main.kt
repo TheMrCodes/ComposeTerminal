@@ -1,12 +1,17 @@
 package core
 
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.height
+import androidx.compose.material.OutlinedTextField
+import androidx.compose.material.TextField
 import androidx.compose.runtime.*
 import androidx.compose.ui.ExperimentalComposeUiApi
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Density
+import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Window
 import androidx.compose.ui.window.application
 import com.jcraft.jsch.ChannelShell
@@ -43,7 +48,7 @@ fun main() = application {
         channel.disconnect()
     }) {
         var scaling by remember { mutableStateOf(1f) }
-        CompositionLocalProvider(LocalDensity provides Density(scaling, 1.25f)) {
+        //CompositionLocalProvider(LocalDensity provides Density(scaling, 1.25f)) {
             remember {
                 window.rootPane.addMouseWheelListener {
                     if (it.isControlDown) {
@@ -55,9 +60,9 @@ fun main() = application {
             }
 
             Column(Modifier.fillMaxSize()) {
-                ComposeTerminal(channel)
+                ComposeTerminal(channel, Modifier.fillMaxSize())
             }
-        }
+        //}
     }
 
 }
